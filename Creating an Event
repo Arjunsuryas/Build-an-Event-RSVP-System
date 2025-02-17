@@ -1,0 +1,64 @@
+<?php
+session_start();
+include 'db.php';
+
+if (isset($_POST['create_event'])) {
+    // Get POST data
+    $event_name = $_POST['event_name'];
+    $event_date = $_POST['event_date'];
+
+    // Validation
+    $errors = [];
+
+    // Validate event name
+    if (empty($event_name)) {
+        $errors[] = 'Event name is required.';
+    } elseif (strlen($event_name) < 3) {
+        $errors[] = 'Event name must be at least 3 characters.';
+    }
+
+    // Validate event date
+    if (empty($event_date)) {
+        $errors[] = 'Event date is required.';
+    } elseif (strtotime($event_date) <= time()) {
+        $errors[] = 'Event date must be in the future.';
+    }
+
+    // If there are no errors, insert into the database
+    if (empty($errors)) {
+        $sql = "INSERT INTO events (name, date) VALUES ('$event_name', '$event_date')";
+        if (mysqli_query($conn, $sql)) {
+            echo "<script>alert('Event created successfully!'); window.location.href = 'index.php';</script>";
+        } else {
+            echo "<script>alert('Error: " . mysqli_error($conn) . "');</script>";
+        }
+    } else {
+        // Display errors
+        echo "<script>alert('" . implode("\\n", $errors) . "');</script>";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Event</title>
+</head>
+<body>
+
+<h2>Create Event</h2>
+
+<form action="event_create.php" method="POST">
+    <label for="event_name">Event Name:</label>
+    <input type="text" id="event_name" name="event_name" required><br><br>
+
+    <label for="event_date">Event Date:</label>
+    <input type="datetime-local" id="event_date" name="event_date" required><br><br>
+
+    <button type="submit" name="create_event">Create Event</button>
+</form>
+
+</body>
+</html>

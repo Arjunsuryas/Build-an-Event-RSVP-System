@@ -1,0 +1,4 @@
+# Install Laravel: Begin by creating a new Laravel project:
+composer create-project --prefer-dist laravel/laravel event-rsvp
+cd event-rsvp
+

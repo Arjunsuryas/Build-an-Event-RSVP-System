@@ -1,0 +1,3 @@
+# package : composer require livewire/livewire
+# package 2: php artisan livewire:publish --assets
+

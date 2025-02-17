@@ -1,0 +1,18 @@
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Event;
+
+class EventListing extends Component
+{
+    public $perPage = 10; // Number of events per page
+
+    public function render()
+    {
+        $events = Event::paginate($this->perPage);
+        
+        return view('livewire.event-listing', [
+            'events' => $events
+        ]);
+    }
+}

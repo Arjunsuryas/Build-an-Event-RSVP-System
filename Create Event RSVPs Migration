@@ -1,0 +1,12 @@
+php artisan make:migration create_event_rsvps_table --create=event_rsvps
+public function up()
+{
+    Schema::create('event_rsvps', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->foreignId('event_id')->constrained()->onDelete('cascade');
+        $table->timestamps();
+    });
+}
+# Run migration 
+php artisan migrate

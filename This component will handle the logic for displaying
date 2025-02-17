@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Event;
+use App\Models\EventRsvp;
+use Illuminate\Support\Facades\Auth;
+
+class EventList extends Component
+{
+    public $events;
+
+    public function mount()
+    {
+        // Fetch all events
+        $this->events = Event::all();
+    }
+
+    public function rsvp($eventId)
+    {
+        // Ensure the user is logged in
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $rsvpExists = EventRsvp::where('user_id', $userId)->where('event_id', $eventId)->exists();
+
+            if (!$rsvpExists) {
+                EventRsvp::create([
+                    'user_id' => $userId,
+                    'event_id' => $eventId
+                ]);
+
+                session()->flash('message', 'RSVP successfully added!');
+                $this->emit('rsvpUpdated', $eventId); // Emit event to update the UI in real-time
+            } else {
+                session()->flash('error', 'You have already RSVPed for this event.');
+            }
+        } else {
+            session()->flash('error', 'You must be logged in to RSVP.');
+        }
+    }
+
+    public function withdrawRsvp($eventId)
+    {
+        // Ensure the user is logged in
+        if (Auth::check()) {
+            $userId = Auth::id();
+
+            // Remove the RSVP entry if it exists
+            EventRsvp::where('user_id', $userId)->where('event_id', $eventId)->delete();
+
+            session()->flash('message', 'RSVP successfully withdrawn!');
+            $this->emit('rsvpUpdated', $eventId); // Emit event to update the UI in real-time
+        } else {
+            session()->flash('error', 'You must be logged in to withdraw your RSVP.');
+        }
+    }
+
+    public function render()
+    {
+        return view('livewire.event-list');
+    }
+}

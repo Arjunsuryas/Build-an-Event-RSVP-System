@@ -1,0 +1,34 @@
+php artisan make:migration create_events_table
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateEventsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('events', function (Blueprint $table) {
+            $table->id(); // Automatically creates an auto-incrementing primary key
+            $table->string('name', 255); // Event name
+            $table->timestamp('date'); // Event date
+            $table->timestamps(); // Automatically creates 'created_at' and 'updated_at' fields
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('events');
+    }
+}

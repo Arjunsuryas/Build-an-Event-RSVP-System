@@ -1,0 +1,138 @@
+#composer require livewire/livewire --dev
+#php artisan make:test EventListTest
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Event;
+use App\Models\User;
+use App\Models\EventRsvp;
+use Livewire\Livewire;
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+
+class EventListTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function events_are_saved_correctly()
+    {
+        // Create a user
+        $user = User::factory()->create();
+
+        // Act as a logged-in user
+        $this->actingAs($user);
+
+        // Create a mock event data
+        $eventData = [
+            'name' => 'Sample Event',
+            'date' => now()->addDays(1)->toDateString(),
+        ];
+
+        // Emit event to add a new event using Livewire
+        Livewire::test('event-list')
+            ->call('addEvent', $eventData)
+            ->assertEmitted('eventAdded'); // Check if eventAdded is emitted
+
+        // Assert the event is created in the database
+        $this->assertDatabaseHas('events', [
+            'name' => 'Sample Event',
+            'date' => $eventData['date'],
+        ]);
+    }
+
+    /** @test */
+    public function event_rsvps_are_saved_correctly()
+    {
+        // Create a user and an event
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+
+        // Act as a logged-in user
+        $this->actingAs($user);
+
+        // RSVP for the event using Livewire
+        Livewire::test('event-list')
+            ->call('rsvp', $event->id)
+            ->assertEmitted('rsvpUpdated', $event->id); // Check if RSVP update is emitted
+
+        // Assert RSVP record is created in the database
+        $this->assertDatabaseHas('event_rsvps', [
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+        ]);
+    }
+
+    /** @test */
+    public function validation_errors_are_displayed_for_invalid_inputs()
+    {
+        // Create a user
+        $user = User::factory()->create();
+
+        // Act as a logged-in user
+        $this->actingAs($user);
+
+        // Attempt to create an event with invalid data (name is too short)
+        $invalidEventData = [
+            'name' => 'EV', // Invalid name, less than 3 characters
+            'date' => now()->addDays(1)->toDateString(),
+        ];
+
+        // Test Livewire form submission
+        Livewire::test('event-list')
+            ->call('addEvent', $invalidEventData)
+            ->assertHasErrors(['name']); // Assert that the name field has an error
+
+        // Now test a valid event
+        $validEventData = [
+            'name' => 'Valid Event',
+            'date' => now()->addDays(1)->toDateString(),
+        ];
+
+        Livewire::test('event-list')
+            ->call('addEvent', $validEventData)
+            ->assertEmitted('eventAdded'); // Event should be added successfully
+    }
+
+    /** @test */
+    public function user_must_be_authenticated_to_rsvp()
+    {
+        // Create an event
+        $event = Event::factory()->create();
+
+        // Try to RSVP without being logged in
+        Livewire::test('event-list')
+            ->call('rsvp', $event->id)
+            ->assertSessionHas('error', 'You must be logged in to RSVP.');
+    }
+
+    /** @test */
+    public function user_can_withdraw_rsvp()
+    {
+        // Create a user and an event
+        $user = User::factory()->create();
+        $event = Event::factory()->create();
+
+        // Act as a logged-in user
+        $this->actingAs($user);
+
+        // RSVP for the event first
+        EventRsvp::create([
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+        ]);
+
+        // Withdraw RSVP using Livewire
+        Livewire::test('event-list')
+            ->call('withdrawRsvp', $event->id)
+            ->assertEmitted('rsvpUpdated', $event->id); // Check if RSVP update is emitted
+
+        // Assert the RSVP record is deleted from the database
+        $this->assertDatabaseMissing('event_rsvps', [
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+        ]);
+    }
+}

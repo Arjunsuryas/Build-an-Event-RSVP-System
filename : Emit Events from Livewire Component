@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use Livewire\Component;
+use App\Models\Event;
+use App\Models\EventRsvp;
+use Illuminate\Support\Facades\Auth;
+
+class EventList extends Component
+{
+    public $events;
+
+    public function mount()
+    {
+        // Fetch all events when the component mounts
+        $this->events = Event::all();
+    }
+
+    // RSVP for an event
+    public function rsvp($eventId)
+    {
+        if (Auth::check()) {
+            $userId = Auth::id();
+            $rsvpExists = EventRsvp::where('user_id', $userId)->where('event_id', $eventId)->exists();
+
+            if (!$rsvpExists) {
+                EventRsvp::create([
+                    'user_id' => $userId,
+                    'event_id' => $eventId
+                ]);
+                
+                // Emit event when RSVP is added
+                session()->flash('message', 'RSVP successfully added!');
+                $this->emit('rsvpUpdated', $eventId); // Emit to update the RSVP count
+            } else {
+                session()->flash('error', 'You have already RSVPed for this event.');
+            }
+        } else {
+            session()->flash('error', 'You must be logged in to RSVP.');
+        }
+    }
+
+    // Withdraw an RSVP
+    public function withdrawRsvp($eventId)
+    {
+        if (Auth::check()) {
+            $userId = Auth::id();
+
+            // Remove the RSVP entry if it exists
+            EventRsvp::where('user_id', $userId)->where('event_id', $eventId)->delete();
+            
+            // Emit event when RSVP is withdrawn
+            session()->flash('message', 'RSVP successfully withdrawn!');
+            $this->emit('rsvpUpdated', $eventId); // Emit to update the RSVP count
+        } else {
+            session()->flash('error', 'You must be logged in to withdraw your RSVP.');
+        }
+    }
+
+    // Add a new event
+    public function addEvent($eventData)
+    {
+        $event = Event::create([
+            'name' => $eventData['name'],
+            'date' => $eventData['date'],
+        ]);
+
+        // Emit event when a new event is created
+        $this->emit('eventAdded', $event->id); // Emit to update the event list dynamically
+    }
+
+    // Delete an event
+    public function deleteEvent($eventId)
+    {
+        Event::find($eventId)->delete();
+
+        // Emit event when an event is deleted
+        $this->emit('eventDeleted', $eventId); // Emit to update the event list dynamically
+    }
+
+    // Render the events view
+    public function render()
+    {
+        return view('livewire.event-list');
+    }
+}

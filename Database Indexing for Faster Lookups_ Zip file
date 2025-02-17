@@ -1,0 +1,15 @@
+Schema::create('rsvps', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('event_id')->constrained()->onDelete('cascade');
+    $table->foreignId('user_id')->constrained()->onDelete('cascade');
+    $table->timestamps();
+
+    // Add indexes for faster lookups
+    $table->index('event_id');
+    $table->index('user_id');
+});
+# If the table already exists, you can add the indexes
+Schema::table('rsvps', function (Blueprint $table) {
+    $table->index('event_id');
+    $table->index('user_id');
+});

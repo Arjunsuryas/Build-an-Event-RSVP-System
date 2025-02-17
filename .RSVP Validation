@@ -1,0 +1,55 @@
+<?php
+session_start();
+include 'db.php';
+
+// Handle RSVP
+if (isset($_POST['rsvp'])) {
+    // Validate if user is logged in
+    if (!isset($_SESSION['user_id'])) {
+        echo "<script>alert('You need to be logged in to RSVP!');</script>";
+    } else {
+        $userId = $_SESSION['user_id'];
+        $eventId = $_POST['event_id'];
+
+        // Validate event ID (check if event exists)
+        $eventCheckQuery = "SELECT * FROM events WHERE id = $eventId";
+        $eventCheckResult = mysqli_query($conn, $eventCheckQuery);
+        if (mysqli_num_rows($eventCheckResult) == 0) {
+            echo "<script>alert('Event does not exist.');</script>";
+        } else {
+            // Check if user has already RSVP'd
+            $rsvpCheckQuery = "SELECT * FROM rsvps WHERE event_id = $eventId AND user_id = $userId";
+            $rsvpCheckResult = mysqli_query($conn, $rsvpCheckQuery);
+            if (mysqli_num_rows($rsvpCheckResult) > 0) {
+                echo "<script>alert('You have already RSVP\'d to this event.');</script>";
+            } else {
+                // Insert RSVP into the database
+                $insertRsvpQuery = "INSERT INTO rsvps (event_id, user_id) VALUES ($eventId, $userId)";
+                if (mysqli_query($conn, $insertRsvpQuery)) {
+                    echo "<script>alert('You have successfully RSVP\'d to the event!');</script>";
+                } else {
+                    echo "<script>alert('Error: " . mysqli_error($conn) . "');</script>";
+                }
+            }
+        }
+    }
+}
+
+// Handle Withdraw RSVP
+if (isset($_POST['withdraw_rsvp'])) {
+    if (!isset($_SESSION['user_id'])) {
+        echo "<script>alert('You need to be logged in to withdraw your RSVP!');</script>";
+    } else {
+        $userId = $_SESSION['user_id'];
+        $eventId = $_POST['event_id'];
+
+        // Delete RSVP from the database
+        $deleteRsvpQuery = "DELETE FROM rsvps WHERE event_id = $eventId AND user_id = $userId";
+        if (mysqli_query($conn, $deleteRsvpQuery)) {
+            echo "<script>alert('You have successfully withdrawn your RSVP!');</script>";
+        } else {
+            echo "<script>alert('Error: " . mysqli_error($conn) . "');</script>";
+        }
+    }
+}
+?>
